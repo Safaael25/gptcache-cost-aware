@@ -401,6 +401,43 @@ Reference: [similarity evaluation dir](https://github.com/zilliztech/GPTCache/tr
                 s += message["content"] + "\n"
         return s
     ```
+    
+    ```python
+    def all_content(data, **kwargs):
+        s = ""
+        messages = data.get("messages")
+        for i, message in enumerate(messages):
+            if i == len(messages) - 1:
+                s += message["content"]
+            else:
+                s += message["content"] + "\n"
+        return s
+```
+
+```python
+    def get_system_and_last_content(data, **kwargs):
+        messages = data.get("messages", [])
+        system_content = ""
+        last_user_content = ""
+        for message in messages:
+            if message.get("role") == "system":
+                system_content = message.get("content", "")
+        if messages:
+            last_user_content = messages[-1].get("content", "")
+        if system_content:
+            return system_content + "\n" + last_user_content
+        return last_user_content
+```
+
+```python
+    def get_role_and_last_content(data, **kwargs):
+        messages = data.get("messages", [])
+        if not messages:
+            return ""
+        last = messages[-1]
+        return last.get("role", "") + ": " + last.get("content", "")
+```
+
 
 - **config**: includes cache-related configurations, which currently consist of the following: `log_time_func`, `similarity_threshold`.
 

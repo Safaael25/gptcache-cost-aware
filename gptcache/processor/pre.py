@@ -383,3 +383,73 @@ def concat_all_queries(data: Dict[str, Any], **params: Dict[str, Any]) -> Any:
         else:
             s += f'{message["role"].upper()}: {message["content"]}\n'
     return s
+
+def get_system_and_last_content(data: Dict[str, Any], **_: Dict[str, Any]) -> Any:
+    """get the system prompt combined with the last user content of the message list
+
+    This ensures that the same user question cached under different system prompts
+    is treated as a separate cache entry.
+
+    :param data: the user llm request data
+    :type data: Dict[str, Any]
+
+    Example:
+        .. code-block:: python
+
+            from gptcache.processor.pre import get_system_and_last_content
+
+            content = get_system_and_last_content({
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Who won the world series in 2020?"},
+                    {"role": "assistant", "content": "The Los Angeles Dodgers won."},
+                    {"role": "user", "content": "Where was it played?"}
+                ]
+            })
+            # content = "You are a helpful assistant.\nWhere was it played?"
+    """
+    messages = data.get("messages", [])
+    system_content = ""
+    last_user_content = ""
+
+    for message in messages:
+        if message.get("role") == "system":
+            system_content = message.get("content", "")
+
+    if messages:
+        last_user_content = messages[-1].get("content", "")
+
+    if system_content:
+        return system_content + "\n" + last_user_content
+    return last_user_content
+
+
+def get_role_and_last_content(data: Dict[str, Any], **_: Dict[str, Any]) -> Any:
+    """get the role and last content of the message list as a single string
+
+    Combines the role and content of the last message, useful when caching
+    needs to distinguish between user and assistant messages.
+
+    :param data: the user llm request data
+    :type data: Dict[str, Any]
+
+    Example:
+        .. code-block:: python
+
+            from gptcache.processor.pre import get_role_and_last_content
+
+            content = get_role_and_last_content({
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Who won the world series in 2020?"}
+                ]
+            })
+            # content = "user: Who won the world series in 2020?"
+    """
+    messages = data.get("messages", [])
+    if not messages:
+        return ""
+    last = messages[-1]
+    role = last.get("role", "")
+    content = last.get("content", "")
+    return role + ": " + content
